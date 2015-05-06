@@ -1,0 +1,25 @@
+{
+  "name": "ts-promise-benchmark",
+  "version": "1.0.0",
+  "description": "Benchmark for TS-Promise against other Promise libraries",
+  "main": "benchmark.js",
+  "scripts": {
+    "prepublish": "tsc",
+    "test": "node benchmark"
+  },
+  "author": "Martin Poelstra <martin@beryllium.net>",
+  "license": "MIT",
+  "dependencies": {
+    "benchmark": "^1.0.0",
+    "bluebird": "^2.9.25",
+    "es6-promise": "^2.1.1",
+    "microtime": "^1.4.0",
+    "q": "^1.3.0",
+    "sinon": "^1.14.1",
+    "source-map-support": "^0.2.10",
+    "ts-promise": "^0.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^1.5.0-beta"
+  }
+}
