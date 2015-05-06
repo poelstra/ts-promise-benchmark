@@ -18,12 +18,10 @@ var Benchmark = require("benchmark");
 type Suite = any;
 
 import assert = require("assert");
+import os = require("os");
 import sinon = require("sinon");
 
-import { Promise as TsPromise, Thenable } from "ts-promise";
-import * as BluebirdPromise from "bluebird";
-// import * as Q from "q";
-// import { Promise as RsvpPromise } from "es6-promise";
+var enableLongStacks = process.env["NODE_ENV"] === "development";
 
 interface PromiseStatic<T> {
 	new(resolver: (fulfill: (value: T|Thenable<T>) => void, reject: (reason: Error) => void) => void): Thenable<T>;
@@ -31,6 +29,51 @@ interface PromiseStatic<T> {
 	reject<R>(reason: Error): Thenable<R>;
 	all<R>(thenables: Thenable<R>[]): Thenable<R[]>;
 }
+
+// Import ts-promise
+import { Promise as TsPromise, Thenable } from "ts-promise";
+TsPromise.setLongTraces(enableLongStacks);
+
+// Import Bluebird
+import * as BluebirdPromise from "bluebird";
+if (enableLongStacks) {
+	(<any>BluebirdPromise).longStackTraces();
+}
+// Override Bluebird's scheduler, such that it uses setImmediate, which can be
+// overriden by Sinon. (Could also e.g. have used process.nextTick).
+// Note that the scheduler is not called often, so it does not have a big impact
+// anyway.
+BluebirdPromise.setScheduler((callback: Function): void => {
+	setImmediate(callback);
+});
+
+// RSVP and Q don't have an interface to override their scheduler, so
+// 'intercept' process.nextTick() and setImmediate()
+function fakeableScheduler(callback: Function) {
+	// This call to setImmediate will be overridden by Sinon
+	setImmediate.apply(undefined, arguments);
+}
+var oldSetImmediate = setImmediate;
+var oldSetTimeout = setTimeout;
+var oldProcessNextTick = process.nextTick;
+global.setImmediate = fakeableScheduler;
+global.setTimeout = <any>fakeableScheduler;
+process.nextTick = fakeableScheduler;
+
+// Import Q
+import * as Q from "q";
+Q.longStackSupport = enableLongStacks;
+var QPromise: PromiseStatic<any> = <any>Q.Promise;
+//QPromise.resolve = Q.resolve;
+
+// Import RSVP
+import { Promise as RsvpPromise } from "es6-promise";
+
+// Restore 'normal' versions
+global.setImmediate = oldSetImmediate;
+global.setTimeout = oldSetTimeout;
+process.nextTick = oldProcessNextTick;
+
 
 var parallelCount = 100;
 var chainLength = 100;
@@ -95,11 +138,16 @@ function makeRunner(Promise: PromiseStatic<number>, testFunc: (Promise: PromiseS
 			ready++;
 		}
 		var clock = sinon.useFakeTimers();
+		var oldProcessNextTick = process.nextTick;
+		process.nextTick = fakeableScheduler; // Sinon doesn't stub this
+
 		for (var i = 0; i < parallelCount; i++) {
 			testFunc(Promise).then(callback, callback);
 		}
 		clock.tick(0);
 		clock.restore();
+		process.nextTick = oldProcessNextTick;
+
 		if (ready !== parallelCount) {
 			var e = new Error("Error flushing promises");
 			console.log(e);
@@ -107,14 +155,6 @@ function makeRunner(Promise: PromiseStatic<number>, testFunc: (Promise: PromiseS
 		}
 	}
 }
-
-// Override Bluebird's scheduler, such that it uses setImmediate, which can be
-// overriden by Sinon. (Could also e.g. have used process.nextTick).
-// Note that the scheduler is not called often, so it does not have a big impact
-// anyway.
-BluebirdPromise.setScheduler(function() {
-	setImmediate.apply(undefined, arguments);
-});
 
 // It seems necessary to run one of the implementations once, to 'prime' the JIT
 function prime(): void {
@@ -136,8 +176,17 @@ suite
 		console.log(String(event.target));
 	});
 
+console.log(os.cpus()[0].model);
+console.log(os.type(), os.release(), os.arch());
 console.log(`Every run creates ${parallelCount} chains of ${chainLength} promises = ~${parallelCount * chainLength} promises`);
+console.log("Long stack traces:", enableLongStacks);
+console.log();
+
 addTests(suite, "ts-promise", TsPromise);
 addTests(suite, "Bluebird", BluebirdPromise);
+if (!enableLongStacks) { // Rsvp doesn't have this feature, so exclude
+	addTests(suite, "RsvpPromise", RsvpPromise);
+}
+addTests(suite, "Q", QPromise);
 
 suite.run({ async: true });
