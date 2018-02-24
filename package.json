@@ -5,7 +5,7 @@
   "main": "benchmark.js",
   "scripts": {
     "prepublish": "tsc",
-    "test": "node benchmark"
+    "test": "node benchmark && echo && NODE_ENV=development node benchmark"
   },
   "author": "Martin Poelstra <martin@beryllium.net>",
   "repository": {
