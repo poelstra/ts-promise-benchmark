@@ -83,3 +83,7 @@ cd ts-promise-benchmark
 npm install
 npm test
 ```
+
+# License
+
+The MIT license.

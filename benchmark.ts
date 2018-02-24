@@ -5,6 +5,7 @@
  * 'patterns' would make sense to get 'real world' stats.
  *
  * Copyright (C) 2015 Martin Poelstra
+ * License: MIT
  */
 
 import "source-map-support/register";
