@@ -1,6 +1,6 @@
 {
   "name": "ts-promise-benchmark",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Benchmark for TS-Promise against other Promise libraries",
   "main": "benchmark.js",
   "scripts": {
@@ -8,18 +8,28 @@
     "test": "node benchmark"
   },
   "author": "Martin Poelstra <martin@beryllium.net>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/poelstra/ts-promise-benchmark"
+  },
   "license": "MIT",
   "dependencies": {
-    "benchmark": "^1.0.0",
-    "bluebird": "^2.9.25",
-    "es6-promise": "^2.1.1",
-    "microtime": "^1.4.0",
-    "q": "^1.3.0",
-    "sinon": "^1.14.1",
-    "source-map-support": "^0.2.10",
-    "ts-promise": "^0.1.0"
+    "benchmark": "^2.1.4",
+    "bluebird": "^3.5.1",
+    "es6-promise": "^4.2.4",
+    "microtime": "^2.1.7",
+    "q": "^1.5.1",
+    "sinon": "^4.4.1",
+    "source-map-support": "^0.5.3",
+    "ts-promise": "^1.0.0"
   },
   "devDependencies": {
-    "typescript": "^1.5.0-beta"
+    "@types/benchmark": "^1.0.31",
+    "@types/bluebird": "^3.5.20",
+    "@types/node": "^9.4.6",
+    "@types/q": "^1.0.7",
+    "@types/sinon": "^4.1.3",
+    "tslint": "^5.9.1",
+    "typescript": "^2.7.2"
   }
 }

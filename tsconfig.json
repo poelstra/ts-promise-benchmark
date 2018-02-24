@@ -1,24 +1,13 @@
 {
-    "version": "1.5.0-alpha",
-    "compilerOptions": {
-        "target": "es5",
-        "module": "commonjs",
-        "declaration": false,
-        "noImplicitAny": false,
-        "removeComments": true,
-        "noLib": false
-    },
-    "filesGlob": [
-        "./**/*.ts",
-        "!./node_modules/**/*.ts"
-    ],
-    "files": [
-        "./benchmark.ts",
-        "./typings/bluebird/bluebird.d.ts",
-        "./typings/es6-promise/es6-promise.d.ts",
-        "./typings/node/node.d.ts",
-        "./typings/q/Q.d.ts",
-        "./typings/sinon/sinon.d.ts",
-        "./typings/tsd.d.ts"
-    ]
+	"compilerOptions": {
+		"module": "commonjs",
+		"target": "es6",
+		"jsx": "preserve",
+		"sourceMap": true,
+		"strict": true
+	},
+	"exclude": [
+		"node_modules",
+		"**/node_modules/*"
+	]
 }

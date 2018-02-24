@@ -7,21 +7,19 @@
  * Copyright (C) 2015 Martin Poelstra
  */
 
-/// <reference path="typings/tsd.d.ts" />
+import "source-map-support/register";
+import "microtime";
 
-"use strict";
-
-// These have no typings yet
-require("source-map-support").install();
-require("microtime");
-var Benchmark = require("benchmark");
-type Suite = any;
-
-import assert = require("assert");
-import os = require("os");
-import sinon = require("sinon");
+import * as Benchmark from "benchmark";
+import * as assert from "assert";
+import * as os from "os";
+import * as sinon from "sinon";
 
 var enableLongStacks = process.env["NODE_ENV"] === "development";
+
+// Import ts-promise
+import { Promise as TsPromise, Thenable } from "ts-promise";
+TsPromise.setLongTraces(enableLongStacks);
 
 interface PromiseStatic<T> {
 	new(resolver: (fulfill: (value: T|Thenable<T>) => void, reject: (reason: Error) => void) => void): Thenable<T>;
@@ -30,14 +28,13 @@ interface PromiseStatic<T> {
 	all<R>(thenables: Thenable<R>[]): Thenable<R[]>;
 }
 
-// Import ts-promise
-import { Promise as TsPromise, Thenable } from "ts-promise";
-TsPromise.setLongTraces(enableLongStacks);
-
 // Import Bluebird
 import * as BluebirdPromise from "bluebird";
 if (enableLongStacks) {
-	(<any>BluebirdPromise).longStackTraces();
+	BluebirdPromise.longStackTraces();
+	BluebirdPromise.config({
+		warnings: false // disable false positive for "non-Error rejection"
+	});
 }
 // Override Bluebird's scheduler, such that it uses setImmediate, which can be
 // overriden by Sinon. (Could also e.g. have used process.nextTick).
@@ -62,9 +59,8 @@ process.nextTick = fakeableScheduler;
 
 // Import Q
 import * as Q from "q";
-Q.longStackSupport = enableLongStacks;
+(<any>Q).longStackSupport = enableLongStacks;
 var QPromise: PromiseStatic<any> = <any>Q.Promise;
-//QPromise.resolve = Q.resolve;
 
 // Import RSVP
 import { Promise as RsvpPromise } from "es6-promise";
@@ -91,7 +87,7 @@ function testSyncResolve(Promise: PromiseStatic<number>): Thenable<number> {
 }
 
 function testSyncReject(Promise: PromiseStatic<number>): Thenable<number> {
-	var p = Promise.reject(boomError);
+	var p = Promise.reject<number>(boomError);
 	for (var i = 0; i < chainLength; i++) {
 		p = p.then((n: number): number => {
 			return n++;
@@ -110,7 +106,7 @@ function testAsyncResolve(Promise: PromiseStatic<number>): Thenable<number> {
 			return n++;
 		});
 	}
-	resolver(42);
+	resolver!(42);
 	return p;
 }
 
@@ -126,7 +122,7 @@ function testAsyncReject(Promise: PromiseStatic<number>): Thenable<number> {
 			return n++;
 		});
 	}
-	rejecter(boomError);
+	rejecter!(boomError);
 	return p;
 }
 
@@ -162,7 +158,7 @@ function prime(): void {
 }
 prime();
 
-function addTests(suite: Suite, name: string, promiseStatic: PromiseStatic<any>): void {
+function addTests(suite: Benchmark.Suite, name: string, promiseStatic: PromiseStatic<any>): void {
 	suite
 		.add(name + " syncResolve", makeRunner(promiseStatic, testSyncResolve))
 		.add(name + " asyncResolve", makeRunner(promiseStatic, testAsyncResolve))
@@ -176,6 +172,7 @@ suite
 		console.log(String(event.target));
 	});
 
+console.log(`Node ${process.versions.node}, V8 ${process.versions.v8}`);
 console.log(os.cpus()[0].model);
 console.log(os.type(), os.release(), os.arch());
 console.log(`Every run creates ${parallelCount} chains of ${chainLength} promises = ~${parallelCount * chainLength} promises`);
